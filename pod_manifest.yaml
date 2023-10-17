@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tpm-shell-deployment
+  namespace: ns1
+  labels:
+    app.kubernetes.io/name: tpm-client
+spec:
+  template:
+    metadata:
+      name: tpm-client
+      labels:
+        app.kubernetes.io/name: tpm-client
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: tpm-client-account
+      automountServiceAccountToken: true
+      containers:
+      - name: app
+        image: docker.io/salrashid123/tpm2_tools:latest
+        command:
+          - /bin/bash
+          - -c
+          - sleep 3600
+        resources:
+          limits:
+            squat.ai/tpm: 1
+        volumeMounts:
+        - mountPath: /root/binary_bios_measurements
+          name: eventlog
+          readOnly: true 
+        securityContext:
+          privileged: false
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: eventlog
+        hostPath:
+          path: /sys/kernel/security/tpm0/binary_bios_measurements
+          type: File
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tpm-client
